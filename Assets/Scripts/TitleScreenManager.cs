@@ -5,6 +5,8 @@ using UnityEngine.UI;
 public class TitleScreenManager : MonoBehaviour
 {
     [SerializeField] private Button pressStartButton;
+    [SerializeField] private GameObject mainMenuGameobject;
+    [SerializeField] private Button newGameButton;
 
 
     private void Awake()
@@ -12,13 +14,24 @@ public class TitleScreenManager : MonoBehaviour
         pressStartButton.onClick.AddListener( () =>
         {
             StartNetworkAsHost();
+            pressStartButton.gameObject.SetActive( false );
+            mainMenuGameobject.SetActive( true );
+            newGameButton.Select();
+        } );
+
+        newGameButton.onClick.AddListener( () =>
+        {
+            StartNewGame();
         } );
     }
 
-
-    public void StartNetworkAsHost()
+    private void StartNetworkAsHost()
     {
-        Debug.Log( "starthost called!" );
         NetworkManager.Singleton.StartHost();
+    }
+
+    private void StartNewGame()
+    {
+        StartCoroutine( SaveGameManager.instance.LoadNewGame() );
     }
 }
