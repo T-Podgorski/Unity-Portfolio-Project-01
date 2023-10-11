@@ -329,7 +329,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1939735968374369417}
   - component: {fileID: -5474015553623244396}
-  - component: {fileID: 364683122480369223}
+  - component: {fileID: 4191432240841341552}
+  - component: {fileID: 7347428534244005901}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -352,7 +353,7 @@ Transform:
   - {fileID: 1962125734034685604}
   - {fileID: 8942478224846511539}
   m_Father: {fileID: 0}
-  m_RootOrder: 4
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &-5474015553623244396
 MonoBehaviour:
@@ -374,7 +375,7 @@ MonoBehaviour:
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
---- !u!114 &364683122480369223
+--- !u!114 &4191432240841341552
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -383,7 +384,19 @@ MonoBehaviour:
   m_GameObject: {fileID: 1270159382527669811}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c87aad2669558da4daca05d4cc216021, type: 3}
+  m_Script: {fileID: 11500000, guid: a0d886d4deb05d74aabc8266241b4273, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &7347428534244005901
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1270159382527669811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 965f49359322d6042b2b28e8f2c7b8ba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &1406025688548721057

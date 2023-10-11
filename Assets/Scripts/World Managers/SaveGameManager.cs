@@ -7,7 +7,8 @@ public class SaveGameManager : MonoBehaviour
     public static SaveGameManager instance { get; private set; }
 
 
-    int worldSceneIndex = 1; // TODO implement Loader and enums instead
+    [SerializeField] private int worldSceneIndex = 1; // TODO implement Loader and enums instead
+
 
     private void Awake()
     {
@@ -19,9 +20,8 @@ public class SaveGameManager : MonoBehaviour
         else
         {
             instance = this;
+            DontDestroyOnLoad( gameObject );
         }
-
-        DontDestroyOnLoad( gameObject );
     }
 
     public IEnumerator LoadNewGame()
@@ -30,4 +30,7 @@ public class SaveGameManager : MonoBehaviour
 
         yield return null;
     }
+
+    public int GetWorldSceneIndex()
+        => worldSceneIndex;
 }
