@@ -7,7 +7,8 @@ public class ExampleScript : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Debug.Log( "this is a multi branch test" );
+        Debug.Log( "this is a test" );
+        Debug.Log( "this is another test" );
     }
 
     // Update is called once per frame
