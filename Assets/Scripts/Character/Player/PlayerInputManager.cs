@@ -6,10 +6,23 @@ public class PlayerInputManager : MonoBehaviour
     public static PlayerInputManager instance { get; private set; }
 
 
-    [SerializeField] Vector2 movementInput;
+    public PlayerManager playerManager;
+    private PlayerInputActions playerInputActions;
+
+    [Header("Player Movement Input")]
+    [SerializeField] private Vector2 movementInput;
+    public float movementInputX;
+    public float movementInputY;
+    public float movementMode;
+
+    [Header("Camera Rotation Input")]
+    // CAMERA INPUT IS FROM MOUSE SLIDING
+    [SerializeField] private Vector2 cameraInput;
+    public float cameraInputX;
+    public float cameraInputY;
+    [SerializeField, Range( 0.1f, 1f )] private float mouseSensitivity = 0.3f;
 
 
-    PlayerInputActions playerInputActions;
 
 
     private void Awake()
@@ -34,9 +47,39 @@ public class PlayerInputManager : MonoBehaviour
             // seems like Enable persists through gameobject toggles
             playerInputActions.Enable();
 
-            playerInputActions.PlayerMovement.Steering.performed += PlayerMovement_Steering_performed;
-            playerInputActions.PlayerMovement.Steering.canceled += PlayerMovement_Steering_canceled;
+            // PLAYER MOVEMENT
+            playerInputActions.PlayerMovement.Gamepad.performed += PlayerMovement_performed;
+            playerInputActions.PlayerMovement.Gamepad.canceled += PlayerMovement_canceled;
+
+            playerInputActions.PlayerMovement.Keyboard.performed += PlayerMovement_performed;
+            playerInputActions.PlayerMovement.Keyboard.canceled += PlayerMovement_canceled;
+
+            // CAMERA ROTATION
+            playerInputActions.PlayerCamera.Gamepad.performed += PlayerCamera_Gamepad_performed;
+            playerInputActions.PlayerCamera.Mouse.performed += PlayerCamera_Mouse_performed;
         }
+    }
+
+    private void PlayerCamera_Gamepad_performed( UnityEngine.InputSystem.InputAction.CallbackContext obj )
+    {
+        cameraInput = obj.ReadValue<Vector2>();
+    }
+
+    private void PlayerCamera_Mouse_performed( UnityEngine.InputSystem.InputAction.CallbackContext obj )
+    {
+        cameraInput = obj.ReadValue<Vector2>() * mouseSensitivity;
+    }
+
+    private void PlayerMovement_canceled( UnityEngine.InputSystem.InputAction.CallbackContext obj )
+    {
+        // for some reason keyboard doesn't reset to zero if all keys are released
+        movementInput = Vector2.zero;
+    }
+
+    private void PlayerMovement_performed( UnityEngine.InputSystem.InputAction.CallbackContext obj )
+    {
+        // this value is normalized in PlayerInputActions asset
+        movementInput = obj.ReadValue<Vector2>();
     }
 
     private void Start()
@@ -51,8 +94,11 @@ public class PlayerInputManager : MonoBehaviour
     {
         SceneManager.activeSceneChanged -= SceneManager_activeSceneChanged;
 
-        playerInputActions.PlayerMovement.Steering.performed -= PlayerMovement_Steering_performed;
-        playerInputActions.PlayerMovement.Steering.canceled -= PlayerMovement_Steering_canceled;
+        playerInputActions.PlayerMovement.Gamepad.performed -= PlayerMovement_performed;
+        playerInputActions.PlayerMovement.Gamepad.canceled -= PlayerMovement_canceled;
+
+        playerInputActions.PlayerMovement.Keyboard.performed -= PlayerMovement_performed;
+        playerInputActions.PlayerMovement.Keyboard.canceled -= PlayerMovement_canceled;
 
         playerInputActions.Dispose();
     }
@@ -70,24 +116,49 @@ public class PlayerInputManager : MonoBehaviour
     }
 
 
-
-    private void PlayerMovement_Steering_canceled( UnityEngine.InputSystem.InputAction.CallbackContext obj )
+    private void OnApplicationFocus( bool focus )
     {
-        movementInput = Vector2.zero;
+        if( enabled )
+        {
+            if ( focus )
+                playerInputActions.Enable();
+            else
+                playerInputActions.Disable();
+        }
     }
 
-    private void PlayerMovement_Steering_performed( UnityEngine.InputSystem.InputAction.CallbackContext obj )
+    private void Update()
     {
-        // this value is normalized in PlayerInputActions asset
-        movementInput = obj.ReadValue<Vector2>();
+        HandlePlayerMovementInput();
+        HandleCameraRotationInput();
     }
 
-    public Vector2 GetMovementInputNormalized()
-    {
-        Vector2 movementInput = playerInputActions.PlayerMovement.Steering.ReadValue<Vector2>();
-        movementInput = movementInput.normalized;
 
-        this.movementInput = movementInput;
-        return movementInput;
+    // TODO for keyboard, ex. hold shift to run. unlike gamepad sticks, keys don't have analog 'input magnitude'
+    private void HandlePlayerMovementInput()
+    {
+        movementInputX = movementInput.x;
+        movementInputY = movementInput.y;
+
+        // DETERMINE MOVEMENT MODE (STAND, WALK, RUN) BASED ON STICK INPUT STRENGTH. Clamp is for diagonals.
+        movementMode = Mathf.Clamp01( Mathf.Abs( movementInputX ) + Mathf.Abs( movementInputY ) );
+
+        if ( movementMode > 0f && movementMode <= 0.5f )
+            movementMode = 0.5f;
+        else if ( movementMode > 0.5f && movementMode <= 1f )
+            movementMode = 1f;
+
+        if ( playerManager == null )
+            return;
+        // IF THE CAMERA IS NOT LOCKED ON, PERFORM ONLY NON-STRAFING MOVEMENT ( NO HORIZONTAL VALUES )
+        playerManager.playerAnimatorManager.UpdateAnimatorMovementParameters( 0f, movementMode );
+
+        // TODO: IF THE CAMERA IS LOCKED ON, ALSO PERFORM STRAFING MOVEMENT ( HORIZONTAL INCLUDED )
+    }
+
+    private void HandleCameraRotationInput()
+    {
+        cameraInputX = cameraInput.x;
+        cameraInputY = cameraInput.y;
     }
 }

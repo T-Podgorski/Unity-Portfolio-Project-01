@@ -6,21 +6,34 @@ public class TitleScreenManager : MonoBehaviour
 {
     [SerializeField] private Button pressStartButton;
     [SerializeField] private GameObject mainMenuGameobject;
-    [SerializeField] private Button newGameButton;
+    [SerializeField] private Button hostButton;
+    [SerializeField] private Button clientButton;
 
 
     private void Awake()
     {
-        pressStartButton.onClick.AddListener( () =>
+        // TEMP
+        pressStartButton.gameObject.SetActive( false );
+        mainMenuGameobject.SetActive( true );
+        hostButton.Select();
+
+        //pressStartButton.onClick.AddListener( () =>
+        //{
+        //    StartNetworkAsHost();
+        //    pressStartButton.gameObject.SetActive( false );
+        //    mainMenuGameobject.SetActive( true );
+        //    hostButton.Select();
+        //} );
+
+        hostButton.onClick.AddListener( () =>
         {
             StartNetworkAsHost();
-            pressStartButton.gameObject.SetActive( false );
-            mainMenuGameobject.SetActive( true );
-            newGameButton.Select();
+            StartNewGame();
         } );
 
-        newGameButton.onClick.AddListener( () =>
+        clientButton.onClick.AddListener( () =>
         {
+            StartNetworkAsClient();
             StartNewGame();
         } );
     }
@@ -28,6 +41,11 @@ public class TitleScreenManager : MonoBehaviour
     private void StartNetworkAsHost()
     {
         NetworkManager.Singleton.StartHost();
+    }
+
+    private void StartNetworkAsClient()
+    {
+        NetworkManager.Singleton.StartClient();
     }
 
     private void StartNewGame()
