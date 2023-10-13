@@ -8,7 +8,7 @@ public class PlayerCamera : MonoBehaviour
 
     [SerializeField] private Transform pivotY; // PIVOT THAT CONTROLS CAMERA'S ROTATION ON Y AXIS ( Left & Right )
     [SerializeField] private Transform pivotX; // PIVOT THAT CONTROLS CAMERA'S ROTATION ON X AXIS ( Up & Down )
-    public Camera mainCameraObject; // ACTUAL CAMERA. IT ORBITS AROUND THE AXES AND THE DISTANCE FROM PLAYER DEPENDS ON ITS Z POSITION
+    public Camera mainCamera; // ACTUAL CAMERA. IT ORBITS AROUND THE AXES AND THE DISTANCE FROM PLAYER DEPENDS ON ITS Z POSITION
 
     public PlayerManager playerManager;
 
@@ -98,7 +98,7 @@ public class PlayerCamera : MonoBehaviour
         targetCameraDistanceToPlayer = defaultCameraDistanceToPlayer;
 
         // DIRECTION FOR COLLISION CHECK
-        Vector3 cameraFacingDirection = mainCameraObject.transform.position - pivotX.position;
+        Vector3 cameraFacingDirection = mainCamera.transform.position - pivotX.position;
         cameraFacingDirection.Normalize();
 
         // CHECK IF THERE IS AN OBJECT IN FRONT OF OUR DESIRED DIRECTION
@@ -115,8 +115,8 @@ public class PlayerCamera : MonoBehaviour
 
         // APPLY THE FINAL CAMERA DISTANCE TO PLAYER
         float cameraCollisionLerpFactor = 0.2f;
-        cameraObjectPosition.z = Mathf.Lerp( mainCameraObject.transform.localPosition.z, targetCameraDistanceToPlayer, cameraCollisionLerpFactor );
-        mainCameraObject.transform.localPosition = cameraObjectPosition;
+        cameraObjectPosition.z = Mathf.Lerp( mainCamera.transform.localPosition.z, targetCameraDistanceToPlayer, cameraCollisionLerpFactor );
+        mainCamera.transform.localPosition = cameraObjectPosition;
     }
 
     public Vector3 GetForwardDir()

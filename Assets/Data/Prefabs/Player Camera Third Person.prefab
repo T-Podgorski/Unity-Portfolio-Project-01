@@ -47,19 +47,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pivotY: {fileID: 7945010962557539526}
   pivotX: {fileID: 1684964434043479167}
-  mainCameraObject: {fileID: 9025587517130142844}
+  mainCamera: {fileID: 9025587517130142844}
   playerManager: {fileID: 0}
   leftRightRotationSpeed: 220
   upDownRotationSpeed: 220
-  minLookDownPivotAngle: -30
-  maxLookUpPivotAngle: 60
+  minLookDownAngle: -30
+  maxLookUpAngle: 60
+  defaultCameraDistanceToPlayer: -3
   cameraCollisionRadius: 0.2
   collisionLayers:
     serializedVersion: 2
     m_Bits: 1
-  leftRightLookAngle: 0
-  upDownLookAngle: 0
-  defaultCameraDistanceToPlayer: -3
 --- !u!1 &2103126334645350114
 GameObject:
   m_ObjectHideFlags: 0

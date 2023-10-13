@@ -4,15 +4,19 @@ public class PlayerMovementManager : CharacterMovementManager
 {
     private PlayerManager playerManager;
 
-    public float verticalMovement;
-    public float horizontalMovement;
-    public float movementMode;
+    [HideInInspector] public float verticalMovement;
+    [HideInInspector] public float horizontalMovement;
+    [HideInInspector] public float movementMode;
 
-    private Vector3 moveDirection;
-    private Vector3 targetRotationDirection;
+    [Header("Movement Settings")]
     [SerializeField] private float walkingSpeed = 2f;
     [SerializeField] private float runningSpeed = 5f;
     [SerializeField] private float rotationSpeed = 15f;
+    private Vector3 moveDirection;
+    private Vector3 targetRotationDirection;
+
+    [Header( "Dodge" )]
+    private Vector3 rollDirection;
 
     protected override void Awake()
     {
@@ -61,6 +65,9 @@ public class PlayerMovementManager : CharacterMovementManager
 
     private void HandleGroundedMovement()
     {
+        if ( !playerManager.canMove )
+            return;
+
         GetMovementValuesFromInput();
 
         // MOVE DIRECTION IS BASED ON THE CAMERA FACING PERSPECTIVE && PLAYER INPUTS
@@ -83,8 +90,11 @@ public class PlayerMovementManager : CharacterMovementManager
 
     private void HandleRotation()
     {
-        targetRotationDirection = PlayerCamera.instance.mainCameraObject.transform.forward * verticalMovement;
-        targetRotationDirection += PlayerCamera.instance.mainCameraObject.transform.right * horizontalMovement;
+        if ( !playerManager.canRotate )
+            return;
+
+        targetRotationDirection = PlayerCamera.instance.mainCamera.transform.forward * verticalMovement;
+        targetRotationDirection += PlayerCamera.instance.mainCamera.transform.right * horizontalMovement;
         targetRotationDirection.Normalize();
         targetRotationDirection.y = 0f;
 
@@ -96,5 +106,32 @@ public class PlayerMovementManager : CharacterMovementManager
         Quaternion newRotation = Quaternion.LookRotation( targetRotationDirection );
         Quaternion targetRotation = Quaternion.Slerp(transform.rotation, newRotation, rotationSpeed * Time.deltaTime );
         transform.rotation = targetRotation;
+    }
+
+    public void AttemptToPerformDodge()
+    {
+        if ( playerManager.isPerformingAction )
+            return;
+
+        // PLAYER MOVING - ROLL
+        if ( PlayerInputManager.instance.movementMode > 0f )
+        {
+            // DETERMINE ROLL DIRECTION BASED ON MOVEMENT INPUTS
+            rollDirection = PlayerCamera.instance.mainCamera.transform.forward * PlayerInputManager.instance.movementInputY;
+            rollDirection += PlayerCamera.instance.mainCamera.transform.right * PlayerInputManager.instance.movementInputX;
+            rollDirection.y = 0;
+            rollDirection.Normalize();
+
+            Quaternion playerRotation = Quaternion.LookRotation( rollDirection );
+            playerManager.transform.rotation = playerRotation;
+
+            // PLAY ROLL ANIMATION
+            playerManager.playerAnimatorManager.PlayTargetActionAnimation( "Roll_Forward_01", true, true );
+        }
+        // PLAYER STATIONARY - BACKSTEP
+        else
+        {
+            playerManager.playerAnimatorManager.PlayTargetActionAnimation( "Backstep_01", true, true );
+        }
     }
 }

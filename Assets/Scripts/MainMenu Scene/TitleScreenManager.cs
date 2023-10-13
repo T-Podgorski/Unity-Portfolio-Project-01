@@ -50,6 +50,6 @@ public class TitleScreenManager : MonoBehaviour
 
     private void StartNewGame()
     {
-        StartCoroutine( SaveGameManager.instance.LoadNewGame() );
+        StartCoroutine( GlobalSaveGameManager.instance.LoadNewGame() );
     }
 }

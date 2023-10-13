@@ -20,7 +20,10 @@ public class PlayerInputManager : MonoBehaviour
     [SerializeField] private Vector2 cameraInput;
     public float cameraInputX;
     public float cameraInputY;
-    [SerializeField, Range( 0.1f, 1f )] private float mouseSensitivity = 0.3f;
+    [SerializeField, Range( 0.1f, 1f )] private float cameraSensitivity = 0.3f;
+
+    [Header( "Player Actions Input" )]
+    [SerializeField] bool dodgeInput = false;
 
 
 
@@ -55,19 +58,22 @@ public class PlayerInputManager : MonoBehaviour
             playerInputActions.PlayerMovement.Keyboard.canceled += PlayerMovement_canceled;
 
             // CAMERA ROTATION
-            playerInputActions.PlayerCamera.Gamepad.performed += PlayerCamera_Gamepad_performed;
-            playerInputActions.PlayerCamera.Mouse.performed += PlayerCamera_Mouse_performed;
+            playerInputActions.PlayerCamera.Gamepad.performed += PlayerCamera_performed;
+            playerInputActions.PlayerCamera.Mouse.performed += PlayerCamera_performed;
+
+            // ACTION - DODGE
+            playerInputActions.PlayerActions.Dodge.performed += PlayerActions_Dodge_performed;
         }
     }
 
-    private void PlayerCamera_Gamepad_performed( UnityEngine.InputSystem.InputAction.CallbackContext obj )
+    private void PlayerActions_Dodge_performed( UnityEngine.InputSystem.InputAction.CallbackContext obj )
     {
-        cameraInput = obj.ReadValue<Vector2>();
+        dodgeInput = true;
     }
 
-    private void PlayerCamera_Mouse_performed( UnityEngine.InputSystem.InputAction.CallbackContext obj )
+    private void PlayerCamera_performed( UnityEngine.InputSystem.InputAction.CallbackContext obj )
     {
-        cameraInput = obj.ReadValue<Vector2>() * mouseSensitivity;
+        cameraInput = obj.ReadValue<Vector2>() * cameraSensitivity;
     }
 
     private void PlayerMovement_canceled( UnityEngine.InputSystem.InputAction.CallbackContext obj )
@@ -94,11 +100,19 @@ public class PlayerInputManager : MonoBehaviour
     {
         SceneManager.activeSceneChanged -= SceneManager_activeSceneChanged;
 
+        // PLAYER MOVEMENT
         playerInputActions.PlayerMovement.Gamepad.performed -= PlayerMovement_performed;
         playerInputActions.PlayerMovement.Gamepad.canceled -= PlayerMovement_canceled;
 
         playerInputActions.PlayerMovement.Keyboard.performed -= PlayerMovement_performed;
         playerInputActions.PlayerMovement.Keyboard.canceled -= PlayerMovement_canceled;
+
+        // CAMERA ROTATION
+        playerInputActions.PlayerCamera.Gamepad.performed -= PlayerCamera_performed;
+        playerInputActions.PlayerCamera.Mouse.performed -= PlayerCamera_performed;
+
+        // ACTION - DODGE
+        playerInputActions.PlayerActions.Dodge.performed -= PlayerActions_Dodge_performed;
 
         playerInputActions.Dispose();
     }
@@ -109,7 +123,7 @@ public class PlayerInputManager : MonoBehaviour
         // BUG this might not be working as intended due to the nature of events?
         //      (based on observation, neither disabled gameobject, nor instance don't stop the value of movementInput from being updated)
         // ENABLE PLAYER CONTROLS ONLY IN CERTAIN SCENES
-        if ( newScene.buildIndex == SaveGameManager.instance.GetWorldSceneIndex() )
+        if ( newScene.buildIndex == GlobalSaveGameManager.instance.GetWorldSceneIndex() )
             instance.enabled = true; // this script itself is enabled, not the entire gameobject
         else
             instance.enabled = false;
@@ -131,8 +145,10 @@ public class PlayerInputManager : MonoBehaviour
     {
         HandlePlayerMovementInput();
         HandleCameraRotationInput();
+        HandleDodgeInput();
     }
 
+    // MOVEMENT
 
     // TODO for keyboard, ex. hold shift to run. unlike gamepad sticks, keys don't have analog 'input magnitude'
     private void HandlePlayerMovementInput()
@@ -160,5 +176,23 @@ public class PlayerInputManager : MonoBehaviour
     {
         cameraInputX = cameraInput.x;
         cameraInputY = cameraInput.y;
+    }
+
+    // ACTIONS
+
+    private void HandleDodgeInput()
+    {
+        // IF STATIONARY - BACKSTEP
+
+        // IF MOVING - ROLL
+
+        if( dodgeInput )
+        {
+            dodgeInput = false;
+
+            // TODO: DO NOTHING IF MENU OR UI WINDOW IS OPEN
+
+            playerManager.playerMovementManager.AttemptToPerformDodge();
+        }
     }
 }
