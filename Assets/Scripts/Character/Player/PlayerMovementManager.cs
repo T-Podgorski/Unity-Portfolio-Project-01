@@ -2,47 +2,50 @@ using UnityEngine;
 
 public class PlayerMovementManager : CharacterMovementManager
 {
-    private PlayerManager playerManager;
+    private PlayerManager player;
 
     [HideInInspector] public float verticalMovement;
     [HideInInspector] public float horizontalMovement;
     [HideInInspector] public float movementMode;
 
-    [Header("Movement Settings")]
+    [Header( "Movement Settings" )]
     [SerializeField] private float walkingSpeed = 2f;
     [SerializeField] private float runningSpeed = 5f;
+    [SerializeField] private float sprintingSpeed = 7f;
     [SerializeField] private float rotationSpeed = 15f;
+    [SerializeField] private float sprintingStaminaCost = 2f;
     private Vector3 moveDirection;
     private Vector3 targetRotationDirection;
 
     [Header( "Dodge" )]
+    [SerializeField] private float dodgeStaminaCost = 25f;
     private Vector3 rollDirection;
 
     protected override void Awake()
     {
         base.Awake();
 
-        playerManager = GetComponent<PlayerManager>();
+        player = GetComponent<PlayerManager>();
     }
 
     protected override void Update()
     {
         base.Update();
 
-        if ( playerManager.IsOwner )
+        if ( player.IsOwner )
         {
-            playerManager.characterNetworkManager.animatorHorizontalMovement.Value = horizontalMovement;
-            playerManager.characterNetworkManager.animatorVerticalMovement.Value = verticalMovement;
-            playerManager.characterNetworkManager.animatorMovementMode.Value = movementMode;
+            player.characterNetworkManager.animatorHorizontalMovement.Value = horizontalMovement;
+            player.characterNetworkManager.animatorVerticalMovement.Value = verticalMovement;
+            player.characterNetworkManager.animatorMovementMode.Value = movementMode;
         }
         else
         {
-            horizontalMovement = playerManager.characterNetworkManager.animatorHorizontalMovement.Value;
-            verticalMovement = playerManager.characterNetworkManager.animatorVerticalMovement.Value;
-            movementMode = playerManager.characterNetworkManager.animatorMovementMode.Value;
+            horizontalMovement = player.characterNetworkManager.animatorHorizontalMovement.Value;
+            verticalMovement = player.characterNetworkManager.animatorVerticalMovement.Value;
+            movementMode = player.characterNetworkManager.animatorMovementMode.Value;
 
             // IF NOT LOCKED ON, DONT STRAFE
-            playerManager.playerAnimatorManager.UpdateAnimatorMovementParameters( 0, movementMode );
+            player.playerAnimatorManager.UpdateAnimatorMovementParameters( 0, movementMode, player.playerNetworkManager.isSprinting.Value );
 
             // TODO: IF LOCKED ON, STRAFE
         }
@@ -65,7 +68,7 @@ public class PlayerMovementManager : CharacterMovementManager
 
     private void HandleGroundedMovement()
     {
-        if ( !playerManager.canMove )
+        if ( !player.canMove )
             return;
 
         GetMovementValuesFromInput();
@@ -76,21 +79,30 @@ public class PlayerMovementManager : CharacterMovementManager
         moveDirection.Normalize();
         moveDirection.y = 0f; // we can't move vertically
 
-        if( PlayerInputManager.instance.movementMode > 0.5f )
+
+        if ( player.playerNetworkManager.isSprinting.Value )
         {
-            // RUN
-            playerManager.CharacterController().Move( moveDirection * runningSpeed * Time.deltaTime );
+            // SPRINT
+            player.characterController.Move( moveDirection * sprintingSpeed * Time.deltaTime );
         }
-        else if ( PlayerInputManager.instance.movementMode > 0f )
+        else
         {
-            // WALK
-            playerManager.CharacterController().Move( moveDirection * walkingSpeed * Time.deltaTime );
+            if ( PlayerInputManager.instance.movementMode > 0.5f )
+            {
+                // RUN
+                player.characterController.Move( moveDirection * runningSpeed * Time.deltaTime );
+            }
+            else if ( PlayerInputManager.instance.movementMode > 0f )
+            {
+                // WALK
+                player.characterController.Move( moveDirection * walkingSpeed * Time.deltaTime );
+            }
         }
     }
 
     private void HandleRotation()
     {
-        if ( !playerManager.canRotate )
+        if ( !player.canRotate )
             return;
 
         targetRotationDirection = PlayerCamera.instance.mainCamera.transform.forward * verticalMovement;
@@ -98,19 +110,56 @@ public class PlayerMovementManager : CharacterMovementManager
         targetRotationDirection.Normalize();
         targetRotationDirection.y = 0f;
 
-        if( targetRotationDirection == Vector3.zero )
+        if ( targetRotationDirection == Vector3.zero )
         {
             targetRotationDirection = transform.forward;
         }
 
         Quaternion newRotation = Quaternion.LookRotation( targetRotationDirection );
-        Quaternion targetRotation = Quaternion.Slerp(transform.rotation, newRotation, rotationSpeed * Time.deltaTime );
+        Quaternion targetRotation = Quaternion.Slerp( transform.rotation, newRotation, rotationSpeed * Time.deltaTime );
         transform.rotation = targetRotation;
+    }
+
+    public void HandleSprinting()
+    {
+        // IF PERFORMING ACTION, SPRINT = FALSE
+        if ( player.isPerformingAction )
+        {
+            player.playerNetworkManager.isSprinting.Value = false;
+            return;
+        }
+
+        // IF OUT OF STAMINA, SPRINT = FALSE
+        if( player.playerNetworkManager.currentStamina.Value <= 0f )
+        {
+            player.playerNetworkManager.isSprinting.Value = false;
+            return;
+        }
+
+        // IF RUNNING, SPRINT = TRUE
+        if( movementMode > 0.5f )
+        {
+            player.playerNetworkManager.isSprinting.Value = true;
+        }    
+        // IF STATIONARY/WALKING, SPRINT = FALSE
+        else
+        {
+            player.playerNetworkManager.isSprinting.Value = false;
+        }
+
+        // IF SPRINTING, BURN STAMINA
+        if(player.playerNetworkManager.isSprinting.Value )
+        {
+            player.playerNetworkManager.currentStamina.Value -= sprintingStaminaCost * Time.deltaTime;
+        }
     }
 
     public void AttemptToPerformDodge()
     {
-        if ( playerManager.isPerformingAction )
+        if ( player.isPerformingAction )
+            return;
+
+        if ( player.playerNetworkManager.currentStamina.Value <= 0f )
             return;
 
         // PLAYER MOVING - ROLL
@@ -123,15 +172,19 @@ public class PlayerMovementManager : CharacterMovementManager
             rollDirection.Normalize();
 
             Quaternion playerRotation = Quaternion.LookRotation( rollDirection );
-            playerManager.transform.rotation = playerRotation;
+            player.transform.rotation = playerRotation;
 
             // PLAY ROLL ANIMATION
-            playerManager.playerAnimatorManager.PlayTargetActionAnimation( "Roll_Forward_01", true, true );
+            player.playerAnimatorManager.PlayTargetActionAnimation( "Roll_Forward_01", true, true );
         }
         // PLAYER STATIONARY - BACKSTEP
         else
         {
-            playerManager.playerAnimatorManager.PlayTargetActionAnimation( "Backstep_01", true, true );
+            // PLAY BACKSTEP ANIMATION
+            player.playerAnimatorManager.PlayTargetActionAnimation( "Backstep_01", true, true );
         }
+
+        // CONSUME STAMINA
+        player.playerNetworkManager.currentStamina.Value -= dodgeStaminaCost;
     }
 }

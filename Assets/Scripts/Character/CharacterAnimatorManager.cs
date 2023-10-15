@@ -3,20 +3,29 @@ using UnityEngine;
 
 public class CharacterAnimatorManager : MonoBehaviour
 {
-    private CharacterManager characterManager;
+    private CharacterManager character;
 
-    private float horizontal;
-    private float vertical;
+    private int horizontalBlendHash;
+    private int verticalBlendHash;
+
 
     protected virtual void Awake()
     {
-        characterManager = GetComponent<CharacterManager>();
+        character = GetComponent<CharacterManager>();
+
+        horizontalBlendHash = Animator.StringToHash( "Horizontal" );
+        verticalBlendHash = Animator.StringToHash( "Vertical" );
     }
 
-    public void UpdateAnimatorMovementParameters(float horizontalValue, float verticalValue)
+    public void UpdateAnimatorMovementParameters( float horizontalValue, float verticalValue, bool isSprinting )
     {
-        characterManager.animator.SetFloat( "Horizontal", horizontalValue, 0.1f, Time.deltaTime );
-        characterManager.animator.SetFloat( "Vertical", verticalValue, 0.1f, Time.deltaTime );
+        if ( isSprinting )
+        {
+            verticalValue = 2;
+        }
+
+        character.animator.SetFloat( horizontalBlendHash, horizontalValue, 0.1f, Time.deltaTime );
+        character.animator.SetFloat( verticalBlendHash, verticalValue, 0.1f, Time.deltaTime );
     }
 
     public virtual void PlayTargetActionAnimation(
@@ -27,16 +36,16 @@ public class CharacterAnimatorManager : MonoBehaviour
         bool canMove = false )
     {
         // APPLY ROOT MOTION MEANS TO TRANSLATE THE ANIMATION's BUILT-IN MOVEMENT INTO ACTUAL MOVEMENT ( they probably can't have 'in place' status )
-        characterManager.applyRootMotion = applyRootMotion;
-        characterManager.animator.CrossFade( targetAnimationName, 0.2f );
+        character.applyRootMotion = applyRootMotion;
+        character.animator.CrossFade( targetAnimationName, 0.2f );
 
         // CAN BE USED TO STOP CHARACTER FROM ATTEMPTING NEW ACTIONS
         // ex. if character takes damage and perform 'got hit' animation, this flag will turn true for stunning attacks
-        characterManager.isPerformingAction = isPerformingAction;
-        characterManager.canRotate = canRotate;
-        characterManager.canMove = canMove;
+        character.isPerformingAction = isPerformingAction;
+        character.canRotate = canRotate;
+        character.canMove = canMove;
 
         // TELL SERVER WE PLAYED AN ANIMATION, AND TO PLAY THAT ANIMATION ON EVERY CLIENT
-        characterManager.characterNetworkManager.PlayAnimationServerRpc( NetworkManager.Singleton.LocalClientId, targetAnimationName, applyRootMotion );
+        character.characterNetworkManager.PlayAnimationServerRpc( NetworkManager.Singleton.LocalClientId, targetAnimationName, applyRootMotion );
     }
 }

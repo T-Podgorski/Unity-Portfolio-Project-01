@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
 public class PlayerInputManager : MonoBehaviour
@@ -6,16 +7,16 @@ public class PlayerInputManager : MonoBehaviour
     public static PlayerInputManager instance { get; private set; }
 
 
-    public PlayerManager playerManager;
+    public PlayerManager player;
     private PlayerInputActions playerInputActions;
 
-    [Header("Player Movement Input")]
+    [Header( "Player Movement Input" )]
     [SerializeField] private Vector2 movementInput;
     public float movementInputX;
     public float movementInputY;
     public float movementMode;
 
-    [Header("Camera Rotation Input")]
+    [Header( "Camera Rotation Input" )]
     // CAMERA INPUT IS FROM MOUSE SLIDING
     [SerializeField] private Vector2 cameraInput;
     public float cameraInputX;
@@ -23,9 +24,8 @@ public class PlayerInputManager : MonoBehaviour
     [SerializeField, Range( 0.1f, 1f )] private float cameraSensitivity = 0.3f;
 
     [Header( "Player Actions Input" )]
-    [SerializeField] bool dodgeInput = false;
-
-
+    [SerializeField] private bool dodgeInput = false;
+    [SerializeField] private bool sprintInput = false;
 
 
     private void Awake()
@@ -41,59 +41,51 @@ public class PlayerInputManager : MonoBehaviour
             DontDestroyOnLoad( gameObject );
         }
     }
-
-    private void OnEnable()
-    {
-        if ( playerInputActions == null )
-        {
-            playerInputActions = new PlayerInputActions();
-            // seems like Enable persists through gameobject toggles
-            playerInputActions.Enable();
-
-            // PLAYER MOVEMENT
-            playerInputActions.PlayerMovement.Gamepad.performed += PlayerMovement_performed;
-            playerInputActions.PlayerMovement.Gamepad.canceled += PlayerMovement_canceled;
-
-            playerInputActions.PlayerMovement.Keyboard.performed += PlayerMovement_performed;
-            playerInputActions.PlayerMovement.Keyboard.canceled += PlayerMovement_canceled;
-
-            // CAMERA ROTATION
-            playerInputActions.PlayerCamera.Gamepad.performed += PlayerCamera_performed;
-            playerInputActions.PlayerCamera.Mouse.performed += PlayerCamera_performed;
-
-            // ACTION - DODGE
-            playerInputActions.PlayerActions.Dodge.performed += PlayerActions_Dodge_performed;
-        }
-    }
-
-    private void PlayerActions_Dodge_performed( UnityEngine.InputSystem.InputAction.CallbackContext obj )
-    {
-        dodgeInput = true;
-    }
-
-    private void PlayerCamera_performed( UnityEngine.InputSystem.InputAction.CallbackContext obj )
-    {
-        cameraInput = obj.ReadValue<Vector2>() * cameraSensitivity;
-    }
-
-    private void PlayerMovement_canceled( UnityEngine.InputSystem.InputAction.CallbackContext obj )
-    {
-        // for some reason keyboard doesn't reset to zero if all keys are released
-        movementInput = Vector2.zero;
-    }
-
-    private void PlayerMovement_performed( UnityEngine.InputSystem.InputAction.CallbackContext obj )
-    {
-        // this value is normalized in PlayerInputActions asset
-        movementInput = obj.ReadValue<Vector2>();
-    }
-
     private void Start()
     {
         SceneManager.activeSceneChanged += SceneManager_activeSceneChanged;
 
         // This instance is created in MainMenu Scene, we don't want it enabled there.
-        instance.enabled = false;
+        //instance.enabled = false;
+        gameObject.SetActive( false );
+    }
+
+    private void OnApplicationFocus( bool focus )
+    {
+        if ( enabled )
+        {
+            if ( focus )
+                playerInputActions.Enable();
+            else
+                playerInputActions.Disable();
+        }
+    }
+
+    private void OnEnable()
+    {
+        if ( playerInputActions != null )
+            return;
+
+        playerInputActions = new PlayerInputActions();
+        // seems like Enable persists through gameobject toggles
+        playerInputActions.Enable();
+
+        // PLAYER MOVEMENT
+        playerInputActions.PlayerMovement.Gamepad.performed += PlayerMovement_performed;
+        playerInputActions.PlayerMovement.Gamepad.canceled += PlayerMovement_canceled;
+
+        playerInputActions.PlayerMovement.Keyboard.performed += PlayerMovement_performed;
+        playerInputActions.PlayerMovement.Keyboard.canceled += PlayerMovement_canceled;
+
+        // CAMERA ROTATION
+        playerInputActions.PlayerCamera.Gamepad.performed += PlayerCamera_performed;
+        playerInputActions.PlayerCamera.Mouse.performed += PlayerCamera_performed;
+
+        // ACTIONS
+        playerInputActions.PlayerActions.Dodge.performed += PlayerAction_Dodge_performed;
+
+        playerInputActions.PlayerActions.Sprint.performed += PlayerAction_Sprint_performed;
+        playerInputActions.PlayerActions.Sprint.canceled += PlayerAction_Sprint_canceled;
     }
 
     private void OnDestroy()
@@ -111,10 +103,45 @@ public class PlayerInputManager : MonoBehaviour
         playerInputActions.PlayerCamera.Gamepad.performed -= PlayerCamera_performed;
         playerInputActions.PlayerCamera.Mouse.performed -= PlayerCamera_performed;
 
-        // ACTION - DODGE
-        playerInputActions.PlayerActions.Dodge.performed -= PlayerActions_Dodge_performed;
+        // ACTIONS
+        playerInputActions.PlayerActions.Dodge.performed -= PlayerAction_Dodge_performed;
+
+        playerInputActions.PlayerActions.Sprint.performed -= PlayerAction_Sprint_performed;
+        playerInputActions.PlayerActions.Sprint.canceled -= PlayerAction_Sprint_canceled;
 
         playerInputActions.Dispose();
+    }
+
+    private void PlayerAction_Sprint_canceled( InputAction.CallbackContext context )
+    {
+        sprintInput = false;
+    }
+
+    private void PlayerAction_Sprint_performed( InputAction.CallbackContext context )
+    {
+        sprintInput = true;
+    }
+
+    private void PlayerAction_Dodge_performed( InputAction.CallbackContext context )
+    {
+        dodgeInput = true;
+    }
+
+    private void PlayerCamera_performed( InputAction.CallbackContext context )
+    {
+        cameraInput = context.ReadValue<Vector2>() * cameraSensitivity;
+    }
+
+    private void PlayerMovement_canceled( InputAction.CallbackContext context )
+    {
+        // for some reason keyboard doesn't reset to zero if all keys are released
+        movementInput = Vector2.zero;
+    }
+
+    private void PlayerMovement_performed( InputAction.CallbackContext context )
+    {
+        // this value is normalized in PlayerInputActions asset
+        movementInput = context.ReadValue<Vector2>();
     }
 
     private void SceneManager_activeSceneChanged( Scene oldScene, Scene newScene )
@@ -124,27 +151,24 @@ public class PlayerInputManager : MonoBehaviour
         //      (based on observation, neither disabled gameobject, nor instance don't stop the value of movementInput from being updated)
         // ENABLE PLAYER CONTROLS ONLY IN CERTAIN SCENES
         if ( newScene.buildIndex == GlobalSaveGameManager.instance.GetWorldSceneIndex() )
-            instance.enabled = true; // this script itself is enabled, not the entire gameobject
+            //instance.enabled = true; // this script itself is enabled, not the entire gameobject
+            gameObject.SetActive( true );
         else
-            instance.enabled = false;
+            //instance.enabled = false;
+            gameObject.SetActive( false );
     }
 
 
-    private void OnApplicationFocus( bool focus )
-    {
-        if( enabled )
-        {
-            if ( focus )
-                playerInputActions.Enable();
-            else
-                playerInputActions.Disable();
-        }
-    }
 
     private void Update()
     {
+        // HACK: THIS CHECK IS BECAUSE THIS UPDATE STARTS RUNNING EARLIER THAN PLAYER AWAKES/SPAWNS
+        if ( player == null )
+            return;
+
         HandlePlayerMovementInput();
         HandleCameraRotationInput();
+        HandleSprintInput();
         HandleDodgeInput();
     }
 
@@ -164,10 +188,11 @@ public class PlayerInputManager : MonoBehaviour
         else if ( movementMode > 0.5f && movementMode <= 1f )
             movementMode = 1f;
 
-        if ( playerManager == null )
+        if ( player == null )
             return;
+
         // IF THE CAMERA IS NOT LOCKED ON, PERFORM ONLY NON-STRAFING MOVEMENT ( NO HORIZONTAL VALUES )
-        playerManager.playerAnimatorManager.UpdateAnimatorMovementParameters( 0f, movementMode );
+        player.playerAnimatorManager.UpdateAnimatorMovementParameters( 0f, movementMode, player.playerNetworkManager.isSprinting.Value );
 
         // TODO: IF THE CAMERA IS LOCKED ON, ALSO PERFORM STRAFING MOVEMENT ( HORIZONTAL INCLUDED )
     }
@@ -180,19 +205,27 @@ public class PlayerInputManager : MonoBehaviour
 
     // ACTIONS
 
+    private void HandleSprintInput()
+    {
+        if ( sprintInput )
+        {
+            player.playerMovementManager.HandleSprinting();
+        }
+        else
+        {
+            player.playerNetworkManager.isSprinting.Value = false;
+        }
+    }
+
     private void HandleDodgeInput()
     {
-        // IF STATIONARY - BACKSTEP
-
-        // IF MOVING - ROLL
-
-        if( dodgeInput )
+        if ( dodgeInput )
         {
             dodgeInput = false;
 
             // TODO: DO NOTHING IF MENU OR UI WINDOW IS OPEN
 
-            playerManager.playerMovementManager.AttemptToPerformDodge();
+            player.playerMovementManager.AttemptToPerformDodge();
         }
     }
 }

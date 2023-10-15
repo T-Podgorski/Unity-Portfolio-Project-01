@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class CharacterNetworkManager : NetworkBehaviour
 {
-    private CharacterManager characterManager;
+    private CharacterManager character;
 
     [Header( "Transform" )]
     public NetworkVariable<Vector3> characterPosition = new NetworkVariable<Vector3>( Vector3.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner );
@@ -18,10 +18,18 @@ public class CharacterNetworkManager : NetworkBehaviour
     public NetworkVariable<float> animatorVerticalMovement = new NetworkVariable<float>( 0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner );
     public NetworkVariable<float> animatorMovementMode = new NetworkVariable<float>( 0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner );
 
+    [Header( "Flags" )]
+    public NetworkVariable<bool> isSprinting = new NetworkVariable<bool>( false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner );
+
+    [Header("Stats")]
+    public NetworkVariable<int> endurance = new NetworkVariable<int>( 1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner );
+    public NetworkVariable<float> currentStamina = new NetworkVariable<float>( 0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner );
+    public NetworkVariable<int> maxStamina = new NetworkVariable<int>( 0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner );
+
 
     protected virtual void Awake()
     {
-        characterManager = GetComponent<CharacterManager>();
+        character = GetComponent<CharacterManager>();
     }
 
     [ServerRpc( RequireOwnership = false )]
@@ -42,6 +50,6 @@ public class CharacterNetworkManager : NetworkBehaviour
 
     private void PerformOtherClientsAnimation( string animationID, bool applyRootMotion )
     {
-        characterManager.animator.CrossFade( animationID, 0.2f );
+        character.animator.CrossFade( animationID, 0.2f );
     }
 }

@@ -17,6 +17,7 @@ public class CharacterManager : NetworkBehaviour
     public bool canRotate = true;
     public bool canMove = true;
 
+
     protected virtual void Awake()
     {
         characterController = GetComponent<CharacterController>();
@@ -48,11 +49,5 @@ public class CharacterManager : NetworkBehaviour
         }
     }
 
-    protected virtual void LateUpdate()
-    {
-
-    }
-
-    public CharacterController CharacterController()
-        => characterController;
+    protected virtual void LateUpdate() { }
 }

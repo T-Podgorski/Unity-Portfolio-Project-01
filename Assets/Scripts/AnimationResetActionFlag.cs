@@ -2,23 +2,23 @@ using UnityEngine;
 
 public class AnimationResetActionFlag : StateMachineBehaviour
 {
-    private CharacterManager characterManager;
+    private CharacterManager character;
 
 
     // OnStateEnter is called when a transition starts and the state machine starts to evaluate this state
     override public void OnStateEnter( Animator animator, AnimatorStateInfo stateInfo, int layerIndex )
     {
-        if( characterManager == null )
+        if( character == null )
         {
             // the animations can see the animator they are a part of, which in turn is on a character
-            characterManager = animator.GetComponent<CharacterManager>();
+            character = animator.GetComponent<CharacterManager>();
         }
 
         // SET THIS WHEN AN ACTION ENDS ( THEY ALL RETURN TO THIS 'Empty' STATE ).
-        characterManager.isPerformingAction = false;
-        characterManager.applyRootMotion = false;
-        characterManager.canRotate = true;
-        characterManager.canMove = true;
+        character.isPerformingAction = false;
+        character.applyRootMotion = false;
+        character.canRotate = true;
+        character.canMove = true;
     }
 
     // OnStateUpdate is called on each Update frame between OnStateEnter and OnStateExit callbacks

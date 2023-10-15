@@ -2,14 +2,14 @@ using UnityEngine;
 
 public class PlayerAnimatorManager : CharacterAnimatorManager
 {
-    private PlayerManager playerManager;
+    private PlayerManager player;
 
 
     protected override void Awake()
     {
         base.Awake();
 
-        playerManager = GetComponent<PlayerManager>();
+        player = GetComponent<PlayerManager>();
     }
 
     // THIS IS LIKE UPDATE(), BUT FOR ANIMATIONS
@@ -18,11 +18,11 @@ public class PlayerAnimatorManager : CharacterAnimatorManager
     {
         // CONTROL ANIMATIONS HERE WITH NUANCE
         // ex. this replaces Animator's applyRootMotion check field, because this script controls it
-        if( playerManager.applyRootMotion )
+        if( player.applyRootMotion )
         {
-            Vector3 velocity = playerManager.animator.deltaPosition;
-            playerManager.characterController.Move( velocity );
-            playerManager.transform.rotation *= playerManager.animator.deltaRotation;
+            Vector3 velocity = player.animator.deltaPosition;
+            player.characterController.Move( velocity );
+            player.transform.rotation *= player.animator.deltaRotation;
         }
     }
 }

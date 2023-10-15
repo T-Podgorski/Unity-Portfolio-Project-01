@@ -5,9 +5,7 @@ public class PlayerUIManager : MonoBehaviour
 {
     public static PlayerUIManager instance { get; private set; }
 
-
-    [Header( "NETWORK JOIN" )]
-    [SerializeField] private bool startGameAsClient;
+    [HideInInspector] public PlayerHudUIManager playerHudUIManager;
 
 
     private void Awake()
@@ -20,20 +18,9 @@ public class PlayerUIManager : MonoBehaviour
         else
         {
             instance = this;
+            DontDestroyOnLoad( gameObject );
         }
 
-        DontDestroyOnLoad( gameObject );
-    }
-
-    private void Update()
-    {
-        // DEBUG
-        if( startGameAsClient )
-        {
-            startGameAsClient = false;
-            // Game starts as a Host, so we need to first shut that down, then start as Client
-            NetworkManager.Singleton.Shutdown();
-            NetworkManager.Singleton.StartClient();
-        }
+        playerHudUIManager = GetComponentInChildren<PlayerHudUIManager>();
     }
 }

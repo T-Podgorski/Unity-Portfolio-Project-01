@@ -10,7 +10,7 @@ public class PlayerCamera : MonoBehaviour
     [SerializeField] private Transform pivotX; // PIVOT THAT CONTROLS CAMERA'S ROTATION ON X AXIS ( Up & Down )
     public Camera mainCamera; // ACTUAL CAMERA. IT ORBITS AROUND THE AXES AND THE DISTANCE FROM PLAYER DEPENDS ON ITS Z POSITION
 
-    public PlayerManager playerManager;
+    public PlayerManager player;
 
     [Header( "Y Axis Settings" )]
     [SerializeField] private float leftRightRotationSpeed = 220;
@@ -49,7 +49,7 @@ public class PlayerCamera : MonoBehaviour
 
     public void HandleCameraActions()
     {
-        if ( playerManager != null )
+        if ( player != null )
         {
             HandleFollowTarget();
             HandleRotation();
@@ -60,7 +60,7 @@ public class PlayerCamera : MonoBehaviour
     private void HandleFollowTarget()
     {
         // THIS object follows the Player
-        Vector3 targetCameraPosition = Vector3.SmoothDamp( transform.position, playerManager.transform.position, ref cameraVelocity, cameraSmoothSpeed * Time.deltaTime );
+        Vector3 targetCameraPosition = Vector3.SmoothDamp( transform.position, player.transform.position, ref cameraVelocity, cameraSmoothSpeed * Time.deltaTime );
         transform.position = targetCameraPosition;
     }
 
